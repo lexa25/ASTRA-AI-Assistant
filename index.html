@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASTRA — AI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">✦</div>
+                <div class="logo-text">
+                    <span class="logo-name">ASTRA</span>
+                    <span class="logo-sub">AI Assistant</span>
+                </div>
+                <div class="status online">
+                    <span class="dot"></span> Онлайн
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="premium-badge">
+                    <span>👑</span> Премиум
+                </div>
+                <button class="icon-btn">🔔</button>
+                <button class="icon-btn">⚙️</button>
+                <button class="icon-btn">☰</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Left Panel - ASTRA -->
+            <div class="avatar-card astra-card">
+                <div class="card-header">
+                    <span class="card-title">ASTRA</span>
+                    <span class="card-role">Главный ИИ</span>
+                </div>
+                <div class="avatar-img astra-avatar">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop" alt="ASTRA">
+                </div>
+                <div class="card-status">
+                    <span class="wave">🎵</span> Готова помочь!
+                </div>
+            </div>
+
+            <!-- Center - Big Avatars -->
+            <div class="center-avatars">
+                <div class="big-avatar left">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&h=600&fit=crop" alt="ASTRA">
+                    <div class="avatar-glow blue"></div>
+                </div>
+                <div class="big-avatar right">
+                    <img src="https://images.unsplash.com/photo-1529626455594-644ea630360b?w=500&h=600&fit=crop" alt="Mia">
+                    <div class="avatar-glow pink"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Mia -->
+            <div class="avatar-card mia-card">
+                <div class="card-header">
+                    <span class="card-title">Mia</span>
+                    <span class="card-role">Контент-ассистент</span>
+                </div>
+                <div class="avatar-img mia-avatar">
+                    <img src="https://images.unsplash.com/photo-1529626455594-644ea630360b?w=400&h=500&fit=crop" alt="Mia">
+                </div>
+                <div class="card-status heart">
+                    ❤️ Всегда рядом ❤️
+                </div>
+            </div>
+
+            <!-- System Ready -->
+            <div class="system-ready">
+                <div class="circle-progress">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" class="bg"></circle>
+                        <circle cx="50" cy="50" r="45" class="progress"></circle>
+                    </svg>
+                    <div class="percent">100%</div>
+                </div>
+                <div class="ready-text">Готовность<br>системы</div>
+            </div>
+
+            <!-- Greeting Bubble -->
+            <div class="greeting">
+                <div class="greeting-icon">✦</div>
+                <div class="greeting-text">
+                    <div class="greeting-title">Привет! Я ASTRA ✨</div>
+                    <div class="greeting-sub">Чем займёмся сегодня?</div>
+                </div>
+            </div>
+
+            <!-- Weather & Time -->
+            <div class="info-panel">
+                <div class="weather">
+                    <span>☀️</span> +12°C<br><small>Берлин</small>
+                </div>
+                <div class="time">
+                    <span>🕐</span> 00:47<br><small>05.11.2026</small>
+                </div>
+            </div>
+        </main>
+
+        <!-- Tools Grid -->
+        <section class="tools">
+            <button class="tool-btn">
+                <span class="tool-icon">💬</span>
+                <span>Чат ИИ</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon"></></span>
+                <span>Код и IT</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">🖼️</span>
+                <span>Генерация изображений</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">🔍</span>
+                <span>Поиск фото</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">🌐</span>
+                <span>Перевод языков</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">⛅</span>
+                <span>Погода</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">⏰</span>
+                <span>Будильник и напоминания</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">🤖</span>
+                <span>Агенты и проекты</span>
+            </button>
+            <button class="tool-btn plus">
+                <span class="tool-icon">+</span>
+                <span>Ещё инструменты</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">▶️</span>
+                <span>Видео и анимация</span>
+            </button>
+            <button class="tool-btn">
+                <span class="tool-icon">🎤</span>
+                <span>Голос и общение</span>
+            </button>
+        </section>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <button class="mic-btn">🎤</button>
+            <input type="text" placeholder="Написать сообщение или задать вопрос..." id="userInput">
+            <button class="send-btn">➤</button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active">
+                <span>🏠</span>
+                <span>Главная</span>
+            </button>
+            <button class="nav-item">
+                <span>🤖</span>
+                <span>Агенты</span>
+            </button>
+            <button class="nav-item">
+                <span>📊</span>
+                <span>Проекты</span>
+            </button>
+            <button class="nav-item">
+                <span>👑</span>
+                <span>Возможности</span>
+            </button>
+            <button class="nav-item">
+                <span>⭐</span>
+                <span>Профиль</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
