@@ -1,105 +1,158 @@
-// ASTRA AI Assistant - Interactive Logic
+// ===== ASTRA AI Assistant =====
 
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('userInput');
-    const sendBtn = document.querySelector('.send-btn');
-    const toolBtns = document.querySelectorAll('.tool-btn');
-    const navItems = document.querySelectorAll('.nav-item');
+    const input = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+    const bubbleTitle = document.getElementById('bubbleTitle');
+    const bubbleSub = document.getElementById('bubbleSub');
+    const liveTime = document.getElementById('liveTime');
+    const liveDate = document.getElementById('liveDate');
 
-    // Update time every minute
-    function updateTime() {
+    // --- Live clock ---
+    function updateClock() {
         const now = new Date();
-        const timeEl = document.querySelector('.time');
-        if (timeEl) {
-            const hours = String(now.getHours()).padStart(2, '0');
-            const mins = String(now.getMinutes()).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const year = now.getFullYear();
-            timeEl.innerHTML = `<span>🕐</span> ${hours}:${mins}<br><small>${day}.${month}.${year}</small>`;
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const mo = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        if (liveTime) liveTime.textContent = `${h}:${m}`;
+        if (liveDate) liveDate.textContent = `${d}.${mo}.${y}`;
+    }
+    updateClock();
+    setInterval(updateClock, 10000);
+
+    // --- Bubble helper ---
+    function setBubble(title, sub, thinking = false) {
+        if (!bubbleTitle || !bubbleSub) return;
+        bubbleTitle.textContent = title;
+        bubbleSub.textContent = sub;
+        const bubble = document.getElementById('chatBubble');
+        if (thinking) {
+            bubble.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+        } else {
+            bubble.style.borderColor = 'rgba(0, 229, 255, 0.35)';
         }
     }
-    updateTime();
-    setInterval(updateTime, 60000);
 
-    // Send message
+    // --- Responses ---
+    const replies = {
+        default: [
+            { t: 'Конечно! Чем могу помочь?', s: 'Спроси что угодно ✨' },
+            { t: 'Я уже здесь, брат 💫', s: 'Готова к любому заданию' },
+            { t: 'Отличный вопрос!', s: 'Давай разберёмся вместе' },
+            { t: 'Mia тоже на связи ❤️', s: 'Мы обе готовы помочь' },
+            { t: 'Обработано ⚡', s: 'Что ещё нужно?' }
+        ],
+        chat: { t: 'Чат ИИ активирован', s: 'Пиши что угодно — я отвечу' },
+        code: { t: 'Модуль Код и IT', s: 'Готова писать, дебажить и объяснять код' },
+        image: { t: 'Генерация изображений', s: 'Опиши картинку — создам' },
+        search: { t: 'Поиск фото', s: 'Что ищем?' },
+        translate: { t: 'Переводчик готов', s: 'Любой язык → любой язык' },
+        weather: { t: 'Погода: Берлин +12°C ☀️', s: 'Ясно, лёгкий ветер' },
+        alarm: { t: 'Напоминания', s: 'Скажи время и что напомнить' },
+        agents: { t: 'Агенты и проекты', s: 'Создаём автономных помощников' },
+        more: { t: 'Ещё инструменты', s: 'Скоро будет ещё больше модулей' },
+        video: { t: 'Видео и анимация', s: 'Генерация и монтаж на подходе' },
+        voice: { t: 'Голосовой режим', s: 'Говори — я слушаю' }
+    };
+
+    function randomReply() {
+        const list = replies.default;
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    // --- Send message ---
     function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
 
-        // Simple response simulation
-        const greeting = document.querySelector('.greeting-text');
-        if (greeting) {
-            greeting.innerHTML = `
-                <div class="greeting-title">ASTRA думает...</div>
-                <div class="greeting-sub">Обрабатываю твой запрос ✨</div>
-            `;
-
-            setTimeout(() => {
-                const responses = [
-                    'Конечно! Чем могу помочь?',
-                    'Отличный вопрос! Давай разберёмся.',
-                    'Я уже работаю над этим 💫',
-                    'Готова помочь с чем угодно!',
-                    'Mia тоже здесь и готова подключиться ❤️'
-                ];
-                const random = responses[Math.floor(Math.random() * responses.length)];
-                greeting.innerHTML = `
-                    <div class="greeting-title">✦ ${random}</div>
-                    <div class="greeting-sub">Спроси что-нибудь ещё</div>
-                `;
-            }, 1200);
-        }
-
+        setBubble('ASTRA думает...', 'Обрабатываю запрос ✨', true);
         input.value = '';
+
+        setTimeout(() => {
+            const r = randomReply();
+            setBubble('✦ ' + r.t, r.s);
+        }, 900 + Math.random() * 600);
     }
 
     sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keypress', (e) => {
+    input.addEventListener('keydown', e => {
         if (e.key === 'Enter') sendMessage();
     });
 
-    // Tool buttons
-    toolBtns.forEach(btn => {
+    // --- Tools ---
+    document.querySelectorAll('.tool').forEach(btn => {
         btn.addEventListener('click', () => {
-            const name = btn.querySelector('span:last-child').textContent;
-            const greeting = document.querySelector('.greeting-text');
-            if (greeting) {
-                greeting.innerHTML = `
-                    <div class="greeting-title">Открываю: ${name}</div>
-                    <div class="greeting-sub">Модуль активирован ⚡</div>
-                `;
+            const tool = btn.dataset.tool;
+            const r = replies[tool] || { t: 'Модуль активирован', s: 'Готово ⚡' };
+            setBubble(r.t, r.s);
+
+            // press effect
+            btn.style.transform = 'scale(0.94)';
+            setTimeout(() => btn.style.transform = '', 160);
+        });
+    });
+
+    // --- Mic ---
+    micBtn.addEventListener('click', () => {
+        micBtn.classList.toggle('active');
+        if (micBtn.classList.contains('active')) {
+            setBubble('Слушаю...', 'Говори, я записываю 🎤');
+        } else {
+            setBubble('Привет! Я ASTRA ✨', 'Чем займёмся сегодня?');
+        }
+    });
+
+    // --- Bottom nav ---
+    document.querySelectorAll('.nav').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+            btn.classList.add('active');
+
+            const page = btn.dataset.page;
+            const titles = {
+                home: ['Главная', 'Ты на главном экране'],
+                agents: ['Агенты', 'Управляй своими ИИ-агентами'],
+                projects: ['Проекты', 'Все твои активные проекты'],
+                features: ['Возможности', 'Полный список функций ASTRA'],
+                profile: ['Профиль', 'Настройки и подписка']
+            };
+            const t = titles[page] || ['ASTRA', ''];
+            setBubble(t[0], t[1]);
+        });
+    });
+
+    // --- Subtle float animation for avatars ---
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes floatA {
+            0%, 100% { transform: translateX(28px) translateY(0); }
+            50% { transform: translateX(28px) translateY(-7px); }
+        }
+        @keyframes floatB {
+            0%, 100% { transform: translateX(-28px) translateY(0); }
+            50% { transform: translateX(-28px) translateY(-5px); }
+        }
+        .avatar.astra { animation: floatA 4.5s ease-in-out infinite; }
+        .avatar.mia { animation: floatB 5s ease-in-out infinite 0.4s; }
+
+        @media (max-width: 860px) {
+            @keyframes floatA {
+                0%, 100% { transform: translateX(16px) translateY(0); }
+                50% { transform: translateX(16px) translateY(-5px); }
             }
+            @keyframes floatB {
+                0%, 100% { transform: translateX(-16px) translateY(0); }
+                50% { transform: translateX(-16px) translateY(-4px); }
+            }
+        }
+    `;
+    document.head.appendChild(style);
 
-            // Visual feedback
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => btn.style.transform = '', 150);
-        });
-    });
-
-    // Navigation
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            navItems.forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
-        });
-    });
-
-    // Subtle animation for avatars
-    const avatars = document.querySelectorAll('.big-avatar');
-    avatars.forEach((av, i) => {
-        av.style.animation = `float ${3 + i * 0.5}s ease-in-out infinite`;
-    });
+    // Welcome message after short delay
+    setTimeout(() => {
+        setBubble('Привет! Я ASTRA ✨', 'Чем займёмся сегодня?');
+    }, 300);
 });
-
-// Add float keyframes dynamically
-const style = document.createElement('style');
-style.textContent = `
-@keyframes float {
-    0%, 100% { transform: translateY(0) translateX(var(--tx, 0)); }
-    50% { transform: translateY(-8px) translateX(var(--tx, 0)); }
-}
-.big-avatar.left { --tx: 30px; }
-.big-avatar.right { --tx: -30px; }
-`;
-document.head.appendChild(style);
