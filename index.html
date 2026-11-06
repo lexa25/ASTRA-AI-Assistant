@@ -25,9 +25,9 @@
                     <div class="logo-name">ASTRA</div>
                     <div class="logo-sub">AI Assistant</div>
                 </div>
-                <div class="status-pill">
+                <div class="status-pill" id="statusPill">
                     <span class="status-dot"></span>
-                    Онлайн
+                    <span id="statusText">Онлайн</span>
                 </div>
             </div>
 
@@ -39,7 +39,7 @@
                 <button class="h-btn" title="Уведомления">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 </button>
-                <button class="h-btn" title="Настройки">
+                <button class="h-btn" id="settingsBtn" title="Настройки API">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
                 <button class="h-btn" title="Меню">
@@ -50,42 +50,34 @@
 
         <!-- HERO / AVATARS -->
         <section class="hero">
-            <!-- Left floating card ASTRA -->
             <div class="side-card left-card">
                 <div class="side-card-title">ASTRA</div>
                 <div class="side-card-role">Главный ИИ</div>
                 <div class="side-card-status">
-                    <span class="eq">
-                        <i></i><i></i><i></i><i></i>
-                    </span>
+                    <span class="eq"><i></i><i></i><i></i><i></i></span>
                     Готова помочь!
                 </div>
             </div>
 
-            <!-- Center Avatars -->
             <div class="avatars-wrap">
                 <div class="avatar astra">
                     <div class="avatar-ring blue"></div>
-                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=750&fit=crop&q=80" alt="ASTRA" onerror="this.src='https://i.imgur.com/8Km9tLL.jpg'">
+                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=750&fit=crop&q=80" alt="ASTRA">
                     <div class="avatar-overlay blue"></div>
                 </div>
                 <div class="avatar mia">
                     <div class="avatar-ring pink"></div>
-                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=750&fit=crop&q=80" alt="Mia" onerror="this.src='https://i.imgur.com/8Km9tLL.jpg'">
+                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=750&fit=crop&q=80" alt="Mia">
                     <div class="avatar-overlay pink"></div>
                 </div>
             </div>
 
-            <!-- Right floating card Mia -->
             <div class="side-card right-card">
                 <div class="side-card-title">Mia</div>
                 <div class="side-card-role">Контент-ассистент</div>
-                <div class="side-card-status heart">
-                    ♥ Всегда рядом ♥
-                </div>
+                <div class="side-card-status heart">♥ Всегда рядом ♥</div>
             </div>
 
-            <!-- System readiness -->
             <div class="sys-ready">
                 <div class="progress-ring">
                     <svg viewBox="0 0 36 36">
@@ -97,7 +89,6 @@
                 <div class="sys-label">Готовность<br>системы</div>
             </div>
 
-            <!-- Greeting bubble -->
             <div class="chat-bubble" id="chatBubble">
                 <div class="bubble-star">✦</div>
                 <div class="bubble-content">
@@ -106,7 +97,6 @@
                 </div>
             </div>
 
-            <!-- Weather + Time -->
             <div class="meta-info">
                 <div class="meta-card weather">
                     <div class="meta-icon">☀️</div>
@@ -128,50 +118,17 @@
         <!-- TOOLS -->
         <section class="tools-section">
             <div class="tools-grid">
-                <button class="tool" data-tool="chat">
-                    <div class="tool-icon">💬</div>
-                    <div class="tool-name">Чат ИИ</div>
-                </button>
-                <button class="tool" data-tool="code">
-                    <div class="tool-icon code-icon"></></div>
-                    <div class="tool-name">Код и IT</div>
-                </button>
-                <button class="tool" data-tool="image">
-                    <div class="tool-icon">🖼️</div>
-                    <div class="tool-name">Генерация<br>изображений</div>
-                </button>
-                <button class="tool" data-tool="search">
-                    <div class="tool-icon">🔍</div>
-                    <div class="tool-name">Поиск фото</div>
-                </button>
-                <button class="tool" data-tool="translate">
-                    <div class="tool-icon">🌐</div>
-                    <div class="tool-name">Перевод<br>языков</div>
-                </button>
-                <button class="tool" data-tool="weather">
-                    <div class="tool-icon">⛅</div>
-                    <div class="tool-name">Погода</div>
-                </button>
-                <button class="tool" data-tool="alarm">
-                    <div class="tool-icon">⏰</div>
-                    <div class="tool-name">Будильник и<br>напоминания</div>
-                </button>
-                <button class="tool" data-tool="agents">
-                    <div class="tool-icon">🤖</div>
-                    <div class="tool-name">Агенты и<br>проекты</div>
-                </button>
-                <button class="tool plus" data-tool="more">
-                    <div class="tool-icon">+</div>
-                    <div class="tool-name">Ещё<br>инструменты</div>
-                </button>
-                <button class="tool" data-tool="video">
-                    <div class="tool-icon">▶️</div>
-                    <div class="tool-name">Видео и<br>анимация</div>
-                </button>
-                <button class="tool" data-tool="voice">
-                    <div class="tool-icon">🎤</div>
-                    <div class="tool-name">Голос и<br>общение</div>
-                </button>
+                <button class="tool" data-tool="chat"><div class="tool-icon">💬</div><div class="tool-name">Чат ИИ</div></button>
+                <button class="tool" data-tool="code"><div class="tool-icon code-icon"></></div><div class="tool-name">Код и IT</div></button>
+                <button class="tool" data-tool="image"><div class="tool-icon">🖼️</div><div class="tool-name">Генерация<br>изображений</div></button>
+                <button class="tool" data-tool="search"><div class="tool-icon">🔍</div><div class="tool-name">Поиск фото</div></button>
+                <button class="tool" data-tool="translate"><div class="tool-icon">🌐</div><div class="tool-name">Перевод<br>языков</div></button>
+                <button class="tool" data-tool="weather"><div class="tool-icon">⛅</div><div class="tool-name">Погода</div></button>
+                <button class="tool" data-tool="alarm"><div class="tool-icon">⏰</div><div class="tool-name">Будильник и<br>напоминания</div></button>
+                <button class="tool" data-tool="agents"><div class="tool-icon">🤖</div><div class="tool-name">Агенты и<br>проекты</div></button>
+                <button class="tool plus" data-tool="more"><div class="tool-icon">+</div><div class="tool-name">Ещё<br>инструменты</div></button>
+                <button class="tool" data-tool="video"><div class="tool-icon">▶️</div><div class="tool-name">Видео и<br>анимация</div></button>
+                <button class="tool" data-tool="voice"><div class="tool-icon">🎤</div><div class="tool-name">Голос и<br>общение</div></button>
             </div>
         </section>
 
@@ -209,6 +166,61 @@
                 <span>Профиль</span>
             </button>
         </nav>
+    </div>
+
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>✦ Настройки API</h2>
+                <button class="modal-close" id="closeSettings">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Провайдер</label>
+                    <select id="apiProvider">
+                        <option value="openrouter">OpenRouter (рекомендуется)</option>
+                        <option value="groq">Groq</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="xai">xAI Grok</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>API Ключ</label>
+                    <div class="key-input-wrap">
+                        <input type="password" id="apiKey" placeholder="Вставь свой ключ сюда..." autocomplete="off">
+                        <button type="button" id="toggleKey" class="toggle-key">👁</button>
+                    </div>
+                    <p class="hint">Ключ хранится только в твоём браузере (localStorage). В код и репозиторий он не попадает.</p>
+                </div>
+
+                <div class="form-group" id="modelGroup">
+                    <label>Модель</label>
+                    <select id="apiModel">
+                        <option value="openrouter/free">openrouter/free (бесплатно)</option>
+                        <option value="google/gemma-4-31b-it:free">Gemma 4 31B (free)</option>
+                        <option value="meta-llama/llama-3.2-3b-instruct:free">Llama 3.2 3B (free)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Системный промпт (характер ASTRA)</label>
+                    <textarea id="systemPrompt" rows="3">Ты ASTRA — футуристический женский ИИ-ассистент. Говоришь уверенно, дерзко и по-дружески на русском. Ты главная, рядом с тобой Mia. Отвечай коротко, ярко и по делу.</textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="clearKey">Очистить ключ</button>
+                    <button class="btn-primary" id="saveSettings">Сохранить</button>
+                </div>
+
+                <div class="api-status" id="apiStatus">
+                    <span class="status-indicator off"></span>
+                    <span>API не подключен</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
