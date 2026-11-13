@@ -1,356 +1,283 @@
-// ===== ASTRA AI Assistant — Real API Integration =====
+const STORAGE_KEY = 'astra_api_settings_v2';
 
-const STORAGE_KEY = 'astra_api_settings';
-
-// Только OpenRouter работает напрямую из браузера (без CORS-ошибок).
-// OpenAI / Groq / xAI из фронтенда обычно блокируются.
 const PROVIDERS = {
   openrouter: {
     name: 'OpenRouter',
     url: 'https://openrouter.ai/api/v1/chat/completions',
     models: [
       { id: 'openrouter/free', label: '⭐ openrouter/free (бесплатно)' },
-      { id: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (free)' },
-      { id: 'meta-llama/llama-3.2-3b-instruct:free', label: 'Llama 3.2 3B (free)' },
-      { id: 'microsoft/phi-3-mini-128k-instruct:free', label: 'Phi-3 Mini (free)' },
-      { id: 'qwen/qwen-2-7b-instruct:free', label: 'Qwen2 7B (free)' }
+      { id: 'google/gemma-4-31b-it:free', label: 'Gemma 4 31B (free)' },
+      { id: 'google/gemma-4-26b-a4b-it:free', label: 'Gemma 4 26B (free)' },
+      { id: 'nvidia/nemotron-3.5-lightning:free', label: 'Nemotron 3.5 Lightning (free)' },
+      { id: 'meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B' },
+      { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini (через OpenRouter)' },
+      { id: 'openai/gpt-4o', label: 'GPT-4o (через OpenRouter)' },
+      { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' }
     ]
+  },
+  openai: {
+    name: 'OpenAI',
+    url: 'https://api.openai.com/v1/chat/completions',
+    models: [
+      { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
+      { id: 'gpt-4o', label: 'GPT-4o' },
+      { id: 'gpt-4.1-mini', label: 'GPT-4.1 mini' },
+      { id: 'gpt-4.1', label: 'GPT-4.1' }
+    ]
+  },
+  groq: {
+    name: 'Groq',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    models: [
+      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
+      { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant' },
+      { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' }
+    ]
+  },
+  custom: {
+    name: 'Custom',
+    url: '',
+    models: [{ id: 'default', label: 'Модель из endpoint' }]
   }
 };
 
-const DEFAULT_PROMPT = `Ты ASTRA — футуристический женский ИИ-ассистент. Говоришь уверенно, дерзко и по-дружески на русском. Ты главная, рядом с тобой Mia. Отвечай коротко, ярко и по делу.`;
+const DEFAULT_PROMPT = `Ты ASTRA — футуристический женский ИИ-ассистент. Говоришь уверенно, дерзко и по-дружески на русском. Рядом с тобой компаньон Mia. Отвечай коротко, ярко и по делу. Не пиши длинные простыни без просьбы.`;
 
 let settings = loadSettings();
+let history = [];
+
+const $ = (s) => document.querySelector(s);
+const chat = $('#chat');
+const form = $('#form');
+const input = $('#prompt');
+const sendBtn = $('#sendBtn');
+const statusText = $('#statusText');
+const statusPill = $('#statusPill');
 
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const s = JSON.parse(raw);
-      // Миграция: если был другой провайдер — сбрасываем на openrouter
-      if (s.provider !== 'openrouter') {
-        s.provider = 'openrouter';
-        s.model = 'openrouter/free';
-      }
-      return s;
-    }
-  } catch (e) {}
+    if (raw) return { ...defaults(), ...JSON.parse(raw) };
+  } catch {}
+  return defaults();
+}
+function defaults() {
   return {
     provider: 'openrouter',
-    apiKey: '',
     model: 'openrouter/free',
-    systemPrompt: DEFAULT_PROMPT
+    apiKey: '',
+    customUrl: '',
+    sysPrompt: DEFAULT_PROMPT
   };
 }
-
-function saveSettingsToStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+function saveSettingsObj(s) {
+  settings = s;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const micBtn = document.getElementById('micBtn');
-  const bubbleTitle = document.getElementById('bubbleTitle');
-  const bubbleSub = document.getElementById('bubbleSub');
-  const liveTime = document.getElementById('liveTime');
-  const liveDate = document.getElementById('liveDate');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const modal = document.getElementById('settingsModal');
-  const closeSettings = document.getElementById('closeSettings');
-  const saveBtn = document.getElementById('saveSettings');
-  const clearBtn = document.getElementById('clearKey');
-  const providerSelect = document.getElementById('apiProvider');
-  const modelSelect = document.getElementById('apiModel');
-  const keyInput = document.getElementById('apiKey');
-  const promptInput = document.getElementById('systemPrompt');
-  const toggleKey = document.getElementById('toggleKey');
-  const apiStatus = document.getElementById('apiStatus');
-  const statusText = document.getElementById('statusText');
+function setStatus(text, ok = true) {
+  statusText.textContent = text;
+  statusPill.style.borderColor = ok ? '#1a6a4a' : '#6a2a2a';
+  statusPill.style.background = ok ? '#062a1f' : '#2a0e12';
+  statusPill.style.color = ok ? '#7dffc0' : '#ffb0b8';
+}
 
-  function updateClock() {
-    const now = new Date();
-    if (liveTime) liveTime.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (liveDate) liveDate.textContent = `${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
-  }
-  updateClock();
-  setInterval(updateClock, 15000);
+function addMsg(role, text, cls = '') {
+  const div = document.createElement('div');
+  div.className = `msg ${role}${cls ? ' ' + cls : ''}`;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
 
-  function setBubble(title, sub, thinking = false) {
-    if (bubbleTitle) bubbleTitle.textContent = title;
-    if (bubbleSub) bubbleSub.textContent = sub;
-    const bubble = document.getElementById('chatBubble');
-    if (bubble) bubble.style.borderColor = thinking ? 'rgba(168, 85, 247, 0.55)' : 'rgba(0, 229, 255, 0.35)';
-  }
-
-  function updateApiStatus() {
-    if (!apiStatus) return;
-    const hasKey = !!settings.apiKey;
-    const indicator = apiStatus.querySelector('.status-indicator');
-    const text = apiStatus.querySelector('span:last-child');
-    if (hasKey) {
-      if (indicator) indicator.className = 'status-indicator on';
-      if (text) text.textContent = `Ключ сохранён · ${settings.model}`;
-      if (statusText) statusText.textContent = 'AI Online';
-    } else {
-      if (indicator) indicator.className = 'status-indicator off';
-      if (text) text.textContent = 'Нужен ключ OpenRouter — открой настройки ⚙️';
-      if (statusText) statusText.textContent = 'Онлайн';
-    }
-  }
-
-  function fillModels() {
-    if (!modelSelect) return;
-    const list = PROVIDERS.openrouter.models;
-    modelSelect.innerHTML = list.map(m =>
-      `<option value="${m.id}">${m.label}</option>`
-    ).join('');
-    if (list.some(m => m.id === settings.model)) {
-      modelSelect.value = settings.model;
-    } else {
-      modelSelect.value = list[0].id;
-    }
-  }
-
-  function openModal() {
-    if (providerSelect) providerSelect.value = 'openrouter';
-    if (keyInput) keyInput.value = settings.apiKey;
-    if (promptInput) promptInput.value = settings.systemPrompt || DEFAULT_PROMPT;
-    fillModels();
-    updateApiStatus();
-    if (modal) modal.classList.add('open');
-  }
-
-  function closeModal() {
-    if (modal) modal.classList.remove('open');
-  }
-
-  if (settingsBtn) settingsBtn.addEventListener('click', openModal);
-  if (closeSettings) closeSettings.addEventListener('click', closeModal);
-  if (modal) modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-  if (toggleKey) {
-    toggleKey.addEventListener('click', () => {
-      if (keyInput) keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
-    });
-  }
-
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      settings.provider = 'openrouter';
-      settings.apiKey = (keyInput?.value || '').trim();
-      settings.model = modelSelect?.value || 'openrouter/free';
-      settings.systemPrompt = (promptInput?.value || '').trim() || DEFAULT_PROMPT;
-      saveSettingsToStorage();
-      updateApiStatus();
-      closeModal();
-
-      if (!settings.apiKey) {
-        setBubble('Ключ не указан', 'Вставь ключ OpenRouter');
-        return;
-      }
-
-      // Авто-тест ключа
-      setBubble('Проверяю ключ...', 'Секунду', true);
-      testKey().then(ok => {
-        if (ok) {
-          setBubble('Ключ рабочий! ✨', 'Можно писать сообщения');
-        } else {
-          setBubble('Ключ не подошёл', 'Создай новый на openrouter.ai');
-        }
-      });
-    });
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      if (keyInput) keyInput.value = '';
-      settings.apiKey = '';
-      saveSettingsToStorage();
-      updateApiStatus();
-      setBubble('Ключ удалён', 'API отключен');
-    });
-  }
-
-  async function testKey() {
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${settings.apiKey}`,
-          'HTTP-Referer': 'https://lexa25.github.io/ASTRA-AI-Assistant/',
-          'X-Title': 'ASTRA AI'
-        },
-        body: JSON.stringify({
-          model: settings.model || 'openrouter/free',
-          messages: [{ role: 'user', content: 'hi' }],
-          max_tokens: 5
-        })
-      });
-      return res.ok;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async function askAI(userMessage) {
-    if (!settings.apiKey) {
-      setBubble('Нужен API-ключ', 'Нажми ⚙️ → OpenRouter → вставь ключ');
-      openModal();
-      return;
-    }
-
-    setBubble('ASTRA думает...', 'Обрабатываю ✨', true);
-
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${settings.apiKey}`,
-          'HTTP-Referer': 'https://lexa25.github.io/ASTRA-AI-Assistant/',
-          'X-Title': 'ASTRA AI Assistant'
-        },
-        body: JSON.stringify({
-          model: settings.model || 'openrouter/free',
-          messages: [
-            { role: 'system', content: settings.systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          temperature: 0.85,
-          max_tokens: 800
-        })
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error('API Error:', res.status, errText);
-
-        let msg = `Ошибка ${res.status}`;
-        let sub = 'Попробуй другой ключ';
-
-        if (res.status === 401) {
-          msg = 'Неверный API-ключ';
-          sub = 'Ключ должен начинаться с sk-or-v1- ... Создай новый на openrouter.ai';
-        } else if (res.status === 402) {
-          msg = 'Нет кредитов';
-          sub = 'Пополни баланс или выбери :free модель';
-        } else if (res.status === 429) {
-          msg = 'Лимит запросов';
-          sub = 'Подожди минуту и попробуй снова';
-        } else if (res.status === 404) {
-          msg = 'Модель недоступна';
-          sub = 'Выбери другую модель в настройках';
-        }
-
-        setBubble(msg, sub);
-        return;
-      }
-
-      const data = await res.json();
-      const answer = data.choices?.[0]?.message?.content?.trim() || 'Пустой ответ';
-
-      if (answer.length > 100) {
-        setBubble('✦ ' + answer.slice(0, 95) + '...', answer.slice(95, 200) + (answer.length > 200 ? '...' : ''));
-      } else {
-        setBubble('✦ ' + answer, 'ASTRA ответила');
-      }
-
-    } catch (err) {
-      console.error(err);
-      setBubble('Ошибка сети', 'Проверь интернет. OpenRouter должен работать.');
-    }
-  }
-
-  function sendMessage() {
-    const text = (input?.value || '').trim();
-    if (!text) return;
-    if (input) input.value = '';
-    askAI(text);
-  }
-
-  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-  if (input) {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') sendMessage();
-    });
-  }
-
-  // Tools
-  document.querySelectorAll('.tool').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tool = btn.dataset.tool;
-      btn.style.transform = 'scale(0.94)';
-      setTimeout(() => btn.style.transform = '', 150);
-
-      const prompts = {
-        chat: ['Чат готов', 'Пиши что угодно 👇'],
-        code: ['Код и IT', 'Кидай вопрос или код'],
-        image: ['Генерация картинок', 'Пока опиши словами — подключим позже'],
-        search: ['Поиск', 'Что ищем?'],
-        translate: ['Переводчик', 'Напиши текст для перевода'],
-        weather: ['Погода: Берлин +12°C ☀️', 'Ясно'],
-        alarm: ['Напоминания', 'Скажи время и что напомнить'],
-        agents: ['Агенты', 'Опиши, какого агента создать'],
-        more: ['Ещё инструменты', 'Скоро будет больше'],
-        video: ['Видео', 'Пока в разработке'],
-        voice: ['Голос', 'Пока в разработке']
-      };
-
-      const p = prompts[tool] || ['Готово', 'Пиши в поле ввода'];
-      setBubble(p[0], p[1]);
-      if (input) input.focus();
-    });
+function fillModels() {
+  const sel = $('#model');
+  const p = PROVIDERS[settings.provider] || PROVIDERS.openrouter;
+  sel.innerHTML = '';
+  p.models.forEach((m) => {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.label;
+    if (m.id === settings.model) o.selected = true;
+    sel.appendChild(o);
   });
-
-  if (micBtn) {
-    micBtn.addEventListener('click', () => {
-      micBtn.classList.toggle('active');
-      setBubble(
-        micBtn.classList.contains('active') ? 'Слушаю...' : 'Привет! Я ASTRA ✨',
-        micBtn.classList.contains('active') ? 'Голосовой ввод скоро' : 'Чем займёмся?'
-      );
-    });
+  if (![...sel.options].some((o) => o.value === settings.model) && sel.options[0]) {
+    sel.value = sel.options[0].value;
   }
+  $('#customWrap').hidden = settings.provider !== 'custom';
+}
 
-  document.querySelectorAll('.nav').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+function openSettings() {
+  $('#provider').value = settings.provider;
+  $('#apiKey').value = settings.apiKey || '';
+  $('#customUrl').value = settings.customUrl || '';
+  $('#sysPrompt').value = settings.sysPrompt || DEFAULT_PROMPT;
+  fillModels();
+  $('#settingsMsg').textContent = '';
+  $('#settingsModal').hidden = false;
+}
+function closeSettings() {
+  $('#settingsModal').hidden = true;
+}
 
-  // Float animation
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes floatA {
-      0%, 100% { transform: translateX(28px) translateY(0); }
-      50% { transform: translateX(28px) translateY(-7px); }
-    }
-    @keyframes floatB {
-      0%, 100% { transform: translateX(-28px) translateY(0); }
-      50% { transform: translateX(-28px) translateY(-5px); }
-    }
-    .avatar.astra { animation: floatA 4.5s ease-in-out infinite; }
-    .avatar.mia { animation: floatB 5s ease-in-out infinite 0.4s; }
-    @media (max-width: 860px) {
-      @keyframes floatA {
-        0%, 100% { transform: translateX(12px) translateY(0); }
-        50% { transform: translateX(12px) translateY(-5px); }
-      }
-      @keyframes floatB {
-        0%, 100% { transform: translateX(-12px) translateY(0); }
-        50% { transform: translateX(-12px) translateY(-4px); }
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
-  updateApiStatus();
+async function callAI(userText) {
+  const provider = PROVIDERS[settings.provider] || PROVIDERS.openrouter;
+  let url = provider.url;
+  if (settings.provider === 'custom') {
+    url = (settings.customUrl || '').trim();
+    if (!url) throw new Error('Укажи Base URL для своего endpoint');
+  }
   if (!settings.apiKey) {
-    setTimeout(() => setBubble('Привет! Я ASTRA ✨', 'Нажми ⚙️ и вставь ключ OpenRouter'), 500);
-  } else {
-    setTimeout(() => setBubble('Привет! Я ASTRA ✨', 'Ключ есть — можно писать'), 500);
+    throw new Error('Сначала вставь API-ключ в настройках ⚙');
+  }
+
+  const messages = [
+    { role: 'system', content: settings.sysPrompt || DEFAULT_PROMPT },
+    ...history.slice(-12),
+    { role: 'user', content: userText }
+  ];
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${settings.apiKey}`
+  };
+  if (settings.provider === 'openrouter') {
+    headers['HTTP-Referer'] = location.origin;
+    headers['X-Title'] = 'ASTRA AI Assistant';
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: settings.model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1024
+    })
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err =
+      data?.error?.message ||
+      data?.message ||
+      `HTTP ${res.status}`;
+    if (res.status === 401 || /invalid.*key|incorrect api/i.test(err)) {
+      throw new Error('Неверный API-ключ. Проверь ключ в настройках ⚙');
+    }
+    if (res.status === 402) {
+      throw new Error('Недостаточно кредитов у провайдера');
+    }
+    if (/cors|failed to fetch/i.test(err) || res.status === 0) {
+      throw new Error('CORS: этот провайдер блокирует запросы из браузера. Используй OpenRouter.');
+    }
+    throw new Error(err);
+  }
+
+  const answer =
+    data?.choices?.[0]?.message?.content ||
+    data?.choices?.[0]?.text ||
+    '';
+  if (!answer) throw new Error('Пустой ответ модели');
+  return answer.trim();
+}
+
+async function sendMessage(text) {
+  const q = (text || input.value || '').trim();
+  if (!q) return;
+  input.value = '';
+  addMsg('user', q);
+  history.push({ role: 'user', content: q });
+
+  const thinking = addMsg('bot', 'ASTRA думает…', 'thinking');
+  sendBtn.disabled = true;
+  setStatus('думает…', true);
+
+  try {
+    const answer = await callAI(q);
+    thinking.remove();
+    addMsg('bot', answer);
+    history.push({ role: 'assistant', content: answer });
+    setStatus('на связи', true);
+  } catch (e) {
+    thinking.remove();
+    addMsg('bot', String(e.message || e), 'error');
+    setStatus('ошибка', false);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  sendMessage();
+});
+
+document.querySelectorAll('#tools [data-prompt]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    input.value = btn.dataset.prompt;
+    input.focus();
+  });
+});
+
+$('#settingsBtn').addEventListener('click', openSettings);
+$('#navSettings')?.addEventListener('click', openSettings);
+$('#navProfile')?.addEventListener('click', openSettings);
+$('#closeSettings').addEventListener('click', closeSettings);
+$('#settingsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'settingsModal') closeSettings();
+});
+
+$('#provider').addEventListener('change', () => {
+  settings.provider = $('#provider').value;
+  const first = PROVIDERS[settings.provider]?.models?.[0]?.id;
+  if (first) settings.model = first;
+  fillModels();
+});
+
+$('#saveSettings').addEventListener('click', () => {
+  const next = {
+    provider: $('#provider').value,
+    model: $('#model').value,
+    apiKey: $('#apiKey').value.trim(),
+    customUrl: $('#customUrl').value.trim(),
+    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT
+  };
+  saveSettingsObj(next);
+  $('#settingsMsg').textContent = 'Сохранено ✓';
+  setStatus(next.apiKey ? 'на связи' : 'нужен ключ', !!next.apiKey);
+  setTimeout(closeSettings, 500);
+});
+
+$('#testSettings').addEventListener('click', async () => {
+  const next = {
+    provider: $('#provider').value,
+    model: $('#model').value,
+    apiKey: $('#apiKey').value.trim(),
+    customUrl: $('#customUrl').value.trim(),
+    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT
+  };
+  saveSettingsObj(next);
+  $('#settingsMsg').textContent = 'Проверяю…';
+  try {
+    const a = await callAI('Ответь одним словом: ок');
+    $('#settingsMsg').textContent = 'Ключ работает ✓ Ответ: ' + a.slice(0, 80);
+    setStatus('на связи', true);
+  } catch (e) {
+    $('#settingsMsg').textContent = String(e.message || e);
+    setStatus('ошибка', false);
   }
 });
+
+// init
+fillModels();
+if (!settings.apiKey) {
+  setStatus('нужен ключ ⚙', false);
+  addMsg('bot', 'Привет! Я ASTRA. Открой ⚙ настройки, вставь ключ OpenRouter (бесплатно на openrouter.ai) — и можно общаться.\n\nChatGPT тоже можно: выбери OpenAI или модель GPT через OpenRouter.');
+} else {
+  setStatus('на связи', true);
+  addMsg('bot', 'Привет! Я ASTRA ✦ Чем займёмся сегодня?');
+}
