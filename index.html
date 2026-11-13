@@ -12,7 +12,6 @@
 <body>
   <div class="bg"></div>
   <div class="app">
-    <!-- Header -->
     <header class="top">
       <div class="brand">
         <div class="brand-icon">✦</div>
@@ -24,15 +23,22 @@
       </div>
       <div class="top-actions">
         <button type="button" class="chip premium">👑 Премиум</button>
-        <button type="button" class="icon-btn" id="settingsBtn" title="API ключи">⚙</button>
+        <button type="button" class="icon-btn" id="settingsBtn" title="Настройки">⚙</button>
       </div>
     </header>
 
-    <!-- Avatars -->
     <section class="heroes">
       <article class="hero astra">
-        <div class="hero-photo">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop" alt="ASTRA" id="imgAstra">
+        <div class="hero-photo astra-face" aria-label="ASTRA">
+          <div class="face-art astra-art">
+            <div class="hair astra-hair"></div>
+            <div class="face">
+              <div class="eyes"><span></span><span></span></div>
+              <div class="lips"></div>
+            </div>
+            <div class="suit astra-suit"></div>
+            <div class="neon-line"></div>
+          </div>
           <div class="hero-glow"></div>
         </div>
         <div class="hero-meta">
@@ -42,8 +48,16 @@
         </div>
       </article>
       <article class="hero mia">
-        <div class="hero-photo">
-          <img src="https://images.unsplash.com/photo-1529626455594-64432c721d1a?w=400&h=500&fit=crop" alt="Mia" id="imgMia">
+        <div class="hero-photo mia-face" aria-label="Mia">
+          <div class="face-art mia-art">
+            <div class="hair mia-hair"></div>
+            <div class="face">
+              <div class="eyes"><span></span><span></span></div>
+              <div class="lips smile"></div>
+            </div>
+            <div class="suit mia-suit"></div>
+            <div class="neon-line pink"></div>
+          </div>
           <div class="hero-glow"></div>
         </div>
         <div class="hero-meta">
@@ -54,7 +68,6 @@
       </article>
     </section>
 
-    <!-- Widgets row -->
     <div class="widgets">
       <div class="widget ring">
         <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" class="ring-bg"/><circle cx="18" cy="18" r="15.5" class="ring-fg" stroke-dasharray="97 100"/></svg>
@@ -71,7 +84,6 @@
       </div>
     </div>
 
-    <!-- Tools -->
     <div class="tools" id="tools">
       <button type="button" data-prompt="Давай поболтаем">💬<span>Чат ИИ</span></button>
       <button type="button" data-prompt="Помоги написать код"></><span>Код и IT</span></button>
@@ -86,63 +98,60 @@
       <button type="button" data-prompt="Давай поговорим голосом">🎤<span>Голос</span></button>
     </div>
 
-    <!-- Chat -->
     <div class="chat" id="chat" aria-live="polite"></div>
 
-    <!-- Compose -->
     <form class="compose" id="form">
       <button type="button" class="c-btn" id="micBtn" title="Голос">🎤</button>
       <input type="text" id="prompt" placeholder="Написать сообщение или задать вопрос…" autocomplete="off">
       <button type="submit" class="c-btn send" id="sendBtn" title="Отправить">➤</button>
     </form>
 
-    <!-- Bottom nav -->
     <nav class="bottom">
       <button type="button" class="active">🏠<span>Главная</span></button>
-      <button type="button" id="navChat">🤖<span>Агенты</span></button>
+      <button type="button" id="navAgents">🤖<span>Агенты</span></button>
       <button type="button">📊<span>Проекты</span></button>
       <button type="button" id="navSettings">👑<span>Возможности</span></button>
       <button type="button" id="navProfile">★<span>Профиль</span></button>
     </nav>
   </div>
 
-  <!-- Settings modal -->
   <div class="modal" id="settingsModal" hidden>
     <div class="modal-card">
       <div class="modal-head">
-        <h2>Подключение ИИ</h2>
+        <h2>Режим ИИ</h2>
         <button type="button" class="icon-btn" id="closeSettings">✕</button>
       </div>
-      <p class="hint">Ключ хранится только в этом браузере (localStorage). Никуда не отправляется, кроме выбранного API.</p>
+      <p class="hint"><b>Демо-режим</b> работает без ключей (локальные ответы). Для умного чата как ChatGPT — OpenRouter (бесплатный ключ).</p>
 
-      <label>Провайдер</label>
+      <label>Режим</label>
       <select id="provider">
-        <option value="openrouter">OpenRouter (рекомендуется, работает из браузера)</option>
-        <option value="openai">OpenAI (ChatGPT) — может блокировать CORS</option>
-        <option value="groq">Groq — может блокировать CORS</option>
-        <option value="custom">Свой endpoint (OpenAI-compatible)</option>
+        <option value="demo">Демо (без ключа)</option>
+        <option value="openrouter">OpenRouter (умный ИИ, ключ sk-or-v1-…)</option>
+        <option value="openai">OpenAI ChatGPT</option>
+        <option value="groq">Groq</option>
+        <option value="custom">Свой endpoint</option>
       </select>
 
       <label>Модель</label>
       <select id="model"></select>
 
-      <label>API ключ</label>
-      <input type="password" id="apiKey" placeholder="sk-or-v1-... или sk-proj-..." autocomplete="off">
+      <label>API ключ (не нужен для Демо)</label>
+      <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
 
       <div id="customWrap" hidden>
         <label>Base URL</label>
         <input type="url" id="customUrl" placeholder="https://api.example.com/v1/chat/completions">
       </div>
 
-      <label>Системный промпт ASTRA</label>
+      <label>Характер ASTRA</label>
       <textarea id="sysPrompt" rows="3"></textarea>
 
       <div class="modal-actions">
         <button type="button" class="btn primary" id="saveSettings">Сохранить</button>
-        <button type="button" class="btn" id="testSettings">Проверить ключ</button>
+        <button type="button" class="btn" id="testSettings">Проверить</button>
       </div>
       <p class="hint" id="settingsMsg"></p>
-      <p class="hint">Бесплатно: зарегистрируйся на <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a>, создай ключ <code>sk-or-v1-...</code>, модель <code>openrouter/free</code>.</p>
+      <p class="hint">Бесплатный умный ИИ: <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> → ключ → модель openrouter/free.</p>
     </div>
   </div>
 
