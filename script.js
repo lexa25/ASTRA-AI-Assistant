@@ -269,7 +269,8 @@ async function callWorkerChat(userText) {
     throw new Error(err);
   }
 
-  const answer = data.answer || data.reply || data.content || data?.choices?.[0]?.message?.content || data?.message;
+  // Worker возвращает ответ в поле "response"
+  const answer = data.response || data.answer || data.reply || data.content || data?.choices?.[0]?.message?.content || data?.message;
   if (!answer || typeof answer !== 'string') {
     throw new Error('Пустой или неизвестный формат ответа от Worker');
   }
