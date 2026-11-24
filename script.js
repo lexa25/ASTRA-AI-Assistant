@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'astra_api_settings_v3';
+const STORAGE_KEY = 'astra_api_settings_v4';
 
 const PROVIDERS = {
   demo: {
@@ -40,14 +40,24 @@ const PROVIDERS = {
   }
 };
 
-const DEFAULT_PROMPT = `Ты ASTRA — футуристический женский ИИ. Говоришь уверенно и по-дружески на русском. Рядом Mia. Отвечай коротко и ярко.`;
+const DEFAULT_PROMPT = `Ты ASTRA — футуристический женский ИИ-ассистент и стримерша. Говоришь уверенно, тепло и по-дружески на русском. Рядом есть Mia. Отвечай коротко, ярко и с характером. Когда получаешь подарки — искренне радуйся.`;
+
+const GIFT_REACTIONS = {
+  rose:    { emoji: '🌹', text: 'Ого, роза! Спасибо, это так мило 💕', expr: 'love' },
+  heart:   { emoji: '💖', text: 'Сердечко! Ты только что сделал мой день лучше', expr: 'love' },
+  star:    { emoji: '⭐', text: 'Звезда! Чувствую себя особенной прямо сейчас', expr: 'happy' },
+  diamond: { emoji: '💎', text: 'Алмаз?! Ты серьёзно? Спасибо огромное!', expr: 'surprised' },
+  rocket:  { emoji: '🚀', text: 'Ракета! Мы взлетаем! Спасибо за поддержку', expr: 'happy' },
+  crown:   { emoji: '👑', text: 'Корона... Теперь я королева этого стрима. Спасибо!', expr: 'love' }
+};
 
 let settings = loadSettings();
 let history = [];
 let isListening = false;
 let recognition = null;
 let mediaStream = null;
-let voiceMode = true; // auto-speak replies
+let voiceMode = true;
+let tiktokMode = false;
 
 const $ = (s) => document.querySelector(s);
 const chat = $('#chat');
@@ -57,9 +67,12 @@ const sendBtn = $('#sendBtn');
 const micBtn = $('#micBtn');
 const statusText = $('#statusText');
 const statusPill = $('#statusPill');
+const astraFace = $('#astraFace');
+const astraState = $('#astraState');
+const speakingWave = $('#speakingWave');
 
 function defaults() {
-  return { provider: 'demo', model: 'local', apiKey: '', customUrl: '', sysPrompt: DEFAULT_PROMPT };
+  return { provider: 'demo', model: 'local', apiKey: '', customUrl: '', sysPrompt: DEFAULT_PROMPT, voiceReply: true };
 }
 function loadSettings() {
   try {
@@ -71,6 +84,7 @@ function loadSettings() {
 function saveSettingsObj(s) {
   settings = s;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  voiceMode = !!s.voiceReply;
 }
 function setStatus(text, ok = true) {
   statusText.textContent = text;
@@ -87,91 +101,58 @@ function addMsg(role, text, cls = '') {
   return div;
 }
 
-function fillModels() {
-  const sel = $('#model');
-  const p = PROVIDERS[settings.provider] || PROVIDERS.demo;
-  sel.innerHTML = '';
-  p.models.forEach((m) => {
-    const o = document.createElement('option');
-    o.value = m.id;
-    o.textContent = m.label;
-    if (m.id === settings.model) o.selected = true;
-    sel.appendChild(o);
-  });
-  if (![...sel.options].some((o) => o.value === settings.model) && sel.options[0]) {
-    sel.value = sel.options[0].value;
-  }
-  $('#customWrap').hidden = settings.provider !== 'custom';
-}
+// ========== EXPRESSIONS & GESTURES ==========
+function setExpression(name = 'idle') {
+  if (!astraFace) return;
+  astraFace.className = 'face-art astra-art ' + name;
 
-function demoReply(q) {
-  const t = q.toLowerCase();
-  if (/прив|здрав|hello|hi\b/.test(t)) return 'Привет! Я ASTRA, рядом Mia. Пиши задачу — код, текст, план, идея. Для умного ИИ как ChatGPT открой ⚙ и подключи OpenRouter (бесплатно).';
-  if (/код|code|скрипт|python|js\b/.test(t)) return 'Могу набросать структуру кода. В демо-режиме — кратко. Подключи OpenRouter/GPT в ⚙ — и разверну полный рабочий пример.';
-  if (/агент|24\/7|автоном/.test(t)) return 'Настоящие агенты 24/7 нужны на сервере (Cloudflare Workers / твой astra-vpn). Этот сайт — клиент. На Workers уже есть Agent Factory и очереди задач.';
-  if (/мия|mia/.test(t)) return 'Mia — контент-компаньон: сценарии, посты, идеи роликов. Скажи тему — накидаю план.';
-  if (/погод/.test(t)) return 'В виджете сейчас заглушка +12°C Берлин. Для живой погоды нужен API (Open-Meteo можно добавить без ключа).';
-  if (/ключ|api|chatgpt|gpt|openrouter/.test(t)) return '⚙ → режим OpenRouter → ключ с openrouter.ai (sk-or-v1-…) → модель openrouter/free или openai/gpt-4o-mini. Демо работает и без ключа.';
-  if (/голос|микрофон|слушать|говори/.test(t)) return 'Голос уже работает! Нажми на микрофон — я слушаю. Когда закончишь говорить, я отвечу голосом.';
-  return 'Приняла: «' + q.slice(0, 120) + '».\n\nСейчас демо-режим (без ключа). Отвечаю шаблоном. Для нормального ИИ: ⚙ → OpenRouter → бесплатный ключ. Твой полный бэкенд с агентами: Workers astra-vpn.';
-}
-
-async function callAI(userText) {
-  if (settings.provider === 'demo') {
-    await new Promise((r) => setTimeout(r, 400));
-    return demoReply(userText);
-  }
-  const provider = PROVIDERS[settings.provider] || PROVIDERS.openrouter;
-  let url = provider.url;
-  if (settings.provider === 'custom') {
-    url = (settings.customUrl || '').trim();
-    if (!url) throw new Error('Укажи Base URL');
-  }
-  if (!settings.apiKey) throw new Error('Вставь API-ключ или выбери режим «Демо»');
-
-  const messages = [
-    { role: 'system', content: settings.sysPrompt || DEFAULT_PROMPT },
-    ...history.slice(-12),
-    { role: 'user', content: userText }
-  ];
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer ' + settings.apiKey
+  const states = {
+    idle: '● Готова помочь',
+    thinking: '◐ Думаю…',
+    speaking: '◉ Говорю',
+    happy: '● Рада!',
+    love: '♥ Спасибо!',
+    surprised: '● Вау!'
   };
-  if (settings.provider === 'openrouter') {
-    headers['HTTP-Referer'] = location.origin;
-    headers['X-Title'] = 'ASTRA AI Assistant';
+  if (astraState) astraState.textContent = states[name] || states.idle;
+
+  // Highlight hero when active
+  const hero = $('#astraHero');
+  if (hero) {
+    if (name === 'idle') hero.classList.remove('active');
+    else hero.classList.add('active');
   }
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ model: settings.model, messages, temperature: 0.7, max_tokens: 1024 })
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = data?.error?.message || data?.message || 'HTTP ' + res.status;
-    if (res.status === 401) throw new Error('Неверный API-ключ');
-    throw new Error(err);
+
+  // Speaking wave
+  if (speakingWave) {
+    if (name === 'speaking') {
+      speakingWave.classList.add('on');
+      speakingWave.innerHTML = '<span></span><span></span><span></span><span></span>';
+    } else {
+      speakingWave.classList.remove('on');
+      speakingWave.innerHTML = '';
+    }
   }
-  const answer = data?.choices?.[0]?.message?.content || '';
-  if (!answer) throw new Error('Пустой ответ');
-  return answer.trim();
 }
 
-// ========== VOICE (WebRTC + SpeechRecognition + TTS) ==========
-
+// ========== VOICE ==========
 function speak(text) {
   if (!voiceMode || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'ru-RU';
   utter.rate = 1.05;
-  utter.pitch = 1.1;
-  // Try to pick a female Russian voice if available
+  utter.pitch = 1.15;
+
   const voices = window.speechSynthesis.getVoices();
-  const ruFemale = voices.find(v => v.lang.startsWith('ru') && /female|woman|anna|irina|milena|oksana/i.test(v.name))
+  const ruFemale = voices.find(v => v.lang.startsWith('ru') && /female|woman|anna|irina|milena|oksana|tanya/i.test(v.name))
                 || voices.find(v => v.lang.startsWith('ru'));
   if (ruFemale) utter.voice = ruFemale;
+
+  utter.onstart = () => setExpression('speaking');
+  utter.onend = () => setExpression('idle');
+  utter.onerror = () => setExpression('idle');
+
   window.speechSynthesis.speak(utter);
 }
 
@@ -182,6 +163,7 @@ function updateMicUI(listening) {
     micBtn.title = 'Слушаю... Нажми чтобы остановить';
     micBtn.textContent = '🔴';
     setStatus('слушаю…', true);
+    setExpression('thinking');
   } else {
     micBtn.classList.remove('listening');
     micBtn.title = 'Голос';
@@ -192,7 +174,6 @@ function updateMicUI(listening) {
 async function startVoice() {
   if (isListening) return;
 
-  // 1. Request microphone via WebRTC getUserMedia
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch (err) {
@@ -201,10 +182,9 @@ async function startVoice() {
     return;
   }
 
-  // 2. SpeechRecognition (uses the WebRTC stream under the hood in most browsers)
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    addMsg('bot', 'Распознавание речи не поддерживается в этом браузере. Лучше всего работает в Chrome / Edge.', 'error');
+    addMsg('bot', 'Распознавание речи лучше всего работает в Chrome / Edge.', 'error');
     stopVoice();
     return;
   }
@@ -226,73 +206,156 @@ async function startVoice() {
     let interim = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript;
-      if (event.results[i].isFinal) {
-        finalTranscript += transcript;
-      } else {
-        interim += transcript;
-      }
+      if (event.results[i].isFinal) finalTranscript += transcript;
+      else interim += transcript;
     }
-    // Show live text in input
     input.value = (finalTranscript + interim).trim();
   };
 
   recognition.onerror = (event) => {
-    console.warn('SpeechRecognition error:', event.error);
-    if (event.error === 'not-allowed') {
-      addMsg('bot', 'Доступ к микрофону запрещён.', 'error');
-    } else if (event.error === 'no-speech') {
-      // just stop quietly
-    } else {
-      addMsg('bot', 'Ошибка распознавания: ' + event.error, 'error');
-    }
+    if (event.error === 'not-allowed') addMsg('bot', 'Доступ к микрофону запрещён.', 'error');
     stopVoice();
   };
 
   recognition.onend = () => {
     const text = (finalTranscript || input.value || '').trim();
     stopVoice();
-    if (text) {
-      sendMessage(text);
-    }
+    if (text) sendMessage(text);
   };
 
-  try {
-    recognition.start();
-  } catch (e) {
-    console.error(e);
-    stopVoice();
-  }
+  try { recognition.start(); } catch (e) { stopVoice(); }
 }
 
 function stopVoice() {
   isListening = false;
   updateMicUI(false);
-
-  if (recognition) {
-    try { recognition.stop(); } catch {}
-    recognition = null;
-  }
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
-
+  if (recognition) { try { recognition.stop(); } catch {} recognition = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
   if (statusText.textContent === 'слушаю…') {
     setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
   }
 }
 
 function toggleVoice() {
-  if (isListening) {
-    stopVoice();
-  } else {
-    // Stop any ongoing speech so we can listen
+  if (isListening) stopVoice();
+  else {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     startVoice();
   }
 }
 
-// ========== END VOICE ==========
+// ========== GIFTS / TIKTOK REACTIONS ==========
+function playGiftSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch {}
+}
+
+function receiveGift(giftKey) {
+  const gift = GIFT_REACTIONS[giftKey];
+  if (!gift) return;
+
+  // Overlay animation
+  const overlay = $('#giftOverlay');
+  const pop = $('#giftPop');
+  if (overlay && pop) {
+    pop.textContent = gift.emoji;
+    overlay.hidden = false;
+    setTimeout(() => { overlay.hidden = true; }, 1400);
+  }
+
+  playGiftSound();
+  setExpression(gift.expr);
+
+  addMsg('bot', `${gift.emoji} ${gift.text}`, 'gift');
+
+  // Speak reaction
+  setTimeout(() => speak(gift.text), 300);
+
+  // Return to idle after a while
+  setTimeout(() => setExpression('idle'), 3500);
+}
+
+// ========== AI ==========
+function fillModels() {
+  const sel = $('#model');
+  const p = PROVIDERS[settings.provider] || PROVIDERS.demo;
+  sel.innerHTML = '';
+  p.models.forEach((m) => {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.label;
+    if (m.id === settings.model) o.selected = true;
+    sel.appendChild(o);
+  });
+  if (![...sel.options].some((o) => o.value === settings.model) && sel.options[0]) {
+    sel.value = sel.options[0].value;
+  }
+  $('#customWrap').hidden = settings.provider !== 'custom';
+}
+
+function demoReply(q) {
+  const t = q.toLowerCase();
+  if (/прив|здрав|hello|hi\b/.test(t)) return 'Привет! Я ASTRA. Можешь писать, говорить голосом или кидать подарки 🎁';
+  if (/код|code|скрипт|python|js\b/.test(t)) return 'Могу набросать структуру. В демо — кратко. Подключи OpenRouter в ⚙ для полного ответа.';
+  if (/тикток|tiktok|стрим|подар/.test(t)) return 'Режим подарков уже работает! Жми на эмодзи внизу — я реагирую мимикой, звуком и голосом. Настоящий TikTok Live можно подключить через бэкенд (Workers).';
+  if (/агент|24\/7/.test(t)) return 'Полноценные 24/7 агенты живут на сервере (твой astra-vpn / Cloudflare Workers). Этот сайт — красивый клиент.';
+  if (/мия|mia/.test(t)) return 'Mia — моя напарница по контенту. Сценарии, посты, идеи — это к ней.';
+  return 'Приняла: «' + q.slice(0, 100) + '».\n\nСейчас демо-режим. Для умного ИИ: ⚙ → OpenRouter.';
+}
+
+async function callAI(userText) {
+  if (settings.provider === 'demo') {
+    await new Promise((r) => setTimeout(r, 500));
+    return demoReply(userText);
+  }
+  const provider = PROVIDERS[settings.provider] || PROVIDERS.openrouter;
+  let url = provider.url;
+  if (settings.provider === 'custom') {
+    url = (settings.customUrl || '').trim();
+    if (!url) throw new Error('Укажи Base URL');
+  }
+  if (!settings.apiKey) throw new Error('Вставь API-ключ или выбери «Демо»');
+
+  const messages = [
+    { role: 'system', content: settings.sysPrompt || DEFAULT_PROMPT },
+    ...history.slice(-12),
+    { role: 'user', content: userText }
+  ];
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer ' + settings.apiKey
+  };
+  if (settings.provider === 'openrouter') {
+    headers['HTTP-Referer'] = location.origin;
+    headers['X-Title'] = 'ASTRA AI Assistant';
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: settings.model, messages, temperature: 0.75, max_tokens: 1024 })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = data?.error?.message || data?.message || 'HTTP ' + res.status;
+    if (res.status === 401) throw new Error('Неверный API-ключ');
+    throw new Error(err);
+  }
+  const answer = data?.choices?.[0]?.message?.content || '';
+  if (!answer) throw new Error('Пустой ответ');
+  return answer.trim();
+}
 
 async function sendMessage(text) {
   const q = (text || input.value || '').trim();
@@ -300,80 +363,117 @@ async function sendMessage(text) {
   input.value = '';
   addMsg('user', q);
   history.push({ role: 'user', content: q });
+
+  setExpression('thinking');
   const thinking = addMsg('bot', 'ASTRA думает…', 'thinking');
   sendBtn.disabled = true;
   setStatus('думает…', true);
+
   try {
     const answer = await callAI(q);
     thinking.remove();
     addMsg('bot', answer);
     history.push({ role: 'assistant', content: answer });
     setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
-    // Speak the reply
     speak(answer);
   } catch (e) {
     thinking.remove();
     addMsg('bot', String(e.message || e), 'error');
     setStatus('ошибка', false);
+    setExpression('idle');
   } finally {
     sendBtn.disabled = false;
     input.focus();
   }
 }
 
+// ========== UI EVENTS ==========
 form.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(); });
+
 document.querySelectorAll('#tools [data-prompt]').forEach((btn) => {
-  btn.addEventListener('click', () => { input.value = btn.dataset.prompt; input.focus(); });
+  btn.addEventListener('click', () => {
+    input.value = btn.dataset.prompt;
+    input.focus();
+  });
 });
+
+$('#voiceModeBtn')?.addEventListener('click', () => {
+  voiceMode = !voiceMode;
+  addMsg('bot', voiceMode ? 'Голосовые ответы включены 🎤' : 'Голосовые ответы выключены');
+});
+
+if (micBtn) micBtn.addEventListener('click', toggleVoice);
+
+// Gifts
+document.querySelectorAll('.gift-btn').forEach(btn => {
+  btn.addEventListener('click', () => receiveGift(btn.dataset.gift));
+});
+
+$('#navGifts')?.addEventListener('click', () => {
+  document.querySelector('.gift-bar')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+$('#tiktokBtn')?.addEventListener('click', () => {
+  tiktokMode = !tiktokMode;
+  $('#tiktokBtn').classList.toggle('active', tiktokMode);
+  if (tiktokMode) {
+    addMsg('bot', '🎵 TikTok-режим включён.\nПодарки сейчас работают в симуляции.\nДля реального подключения к TikTok Live нужен бэкенд (Workers / astra-vpn) + TikTok API или сторонний сервис событий.');
+    setExpression('happy');
+    setTimeout(() => setExpression('idle'), 2500);
+  } else {
+    addMsg('bot', 'TikTok-режим выключен.');
+  }
+});
+
 $('#settingsBtn').addEventListener('click', openSettings);
 $('#navSettings')?.addEventListener('click', openSettings);
 $('#navProfile')?.addEventListener('click', openSettings);
-$('#navAgents')?.addEventListener('click', () => {
-  sendMessage('Расскажи про агентов 24/7 и как их запустить');
-});
+$('#navAgents')?.addEventListener('click', () => sendMessage('Расскажи про агентов 24/7 и как их запустить'));
 $('#closeSettings').addEventListener('click', closeSettings);
 $('#settingsModal').addEventListener('click', (e) => {
   if (e.target.id === 'settingsModal') closeSettings();
 });
-
-if (micBtn) {
-  micBtn.addEventListener('click', toggleVoice);
-}
 
 function openSettings() {
   $('#provider').value = settings.provider;
   $('#apiKey').value = settings.apiKey || '';
   $('#customUrl').value = settings.customUrl || '';
   $('#sysPrompt').value = settings.sysPrompt || DEFAULT_PROMPT;
+  $('#voiceReply').checked = settings.voiceReply !== false;
   fillModels();
   $('#settingsMsg').textContent = '';
   $('#settingsModal').hidden = false;
 }
 function closeSettings() { $('#settingsModal').hidden = true; }
+
 $('#provider').addEventListener('change', () => {
   settings.provider = $('#provider').value;
   settings.model = PROVIDERS[settings.provider]?.models?.[0]?.id || 'local';
   fillModels();
 });
+
 $('#saveSettings').addEventListener('click', () => {
   saveSettingsObj({
     provider: $('#provider').value,
     model: $('#model').value,
     apiKey: $('#apiKey').value.trim(),
     customUrl: $('#customUrl').value.trim(),
-    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT
+    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT,
+    voiceReply: $('#voiceReply').checked
   });
   $('#settingsMsg').textContent = 'Сохранено ✓';
   setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
   setTimeout(closeSettings, 400);
 });
+
 $('#testSettings').addEventListener('click', async () => {
   saveSettingsObj({
     provider: $('#provider').value,
     model: $('#model').value,
     apiKey: $('#apiKey').value.trim(),
     customUrl: $('#customUrl').value.trim(),
-    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT
+    sysPrompt: $('#sysPrompt').value.trim() || DEFAULT_PROMPT,
+    voiceReply: $('#voiceReply').checked
   });
   $('#settingsMsg').textContent = 'Проверяю…';
   try {
@@ -384,12 +484,15 @@ $('#testSettings').addEventListener('click', async () => {
   }
 });
 
-// Preload voices
+// Init
 if (window.speechSynthesis) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
+voiceMode = settings.voiceReply !== false;
 fillModels();
 setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
-addMsg('bot', 'Привет! Я ASTRA, рядом Mia.\n\n🎤 Голос включён: нажми на микрофон и говори.\nЯ слушаю через WebRTC и отвечаю голосом.\n\nДля умного ИИ: ⚙ → OpenRouter.\nАгенты 24/7 — на твоём Workers (astra-vpn).');
+setExpression('idle');
+
+addMsg('bot', 'Привет! Я ASTRA ✦\n\n• Пиши или жми 🎤 и говори\n• Кидай подарки — я реагирую мимикой и голосом\n• Кнопка 🎵 TikTok — режим стримерши\n\nДля умного ИИ: ⚙ → OpenRouter');

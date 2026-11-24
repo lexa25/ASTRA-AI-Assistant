@@ -12,6 +12,8 @@
 <body>
   <div class="bg"></div>
   <div class="app">
+
+    <!-- HEADER -->
     <header class="top">
       <div class="brand">
         <div class="brand-icon">✦</div>
@@ -22,38 +24,45 @@
         <span class="online" id="statusPill"><i></i> <span id="statusText">Онлайн</span></span>
       </div>
       <div class="top-actions">
-        <button type="button" class="chip premium">👑 Премиум</button>
+        <button type="button" class="chip tiktok" id="tiktokBtn" title="TikTok режим">🎵 TikTok</button>
         <button type="button" class="icon-btn" id="settingsBtn" title="Настройки">⚙</button>
       </div>
     </header>
 
+    <!-- HEROES with expressions -->
     <section class="heroes">
-      <article class="hero astra">
-        <div class="hero-photo astra-face" aria-label="ASTRA">
-          <div class="face-art astra-art">
+      <article class="hero astra" id="astraHero">
+        <div class="hero-photo astra-face">
+          <div class="face-art astra-art idle" id="astraFace">
             <div class="hair astra-hair"></div>
             <div class="face">
-              <div class="eyes"><span></span><span></span></div>
-              <div class="lips"></div>
+              <div class="brows"></div>
+              <div class="eyes"><span class="eye left"></span><span class="eye right"></span></div>
+              <div class="mouth"></div>
             </div>
             <div class="suit astra-suit"></div>
             <div class="neon-line"></div>
+            <div class="gesture-hand left-hand"></div>
+            <div class="gesture-hand right-hand"></div>
           </div>
           <div class="hero-glow"></div>
+          <div class="speaking-wave" id="speakingWave"></div>
         </div>
         <div class="hero-meta">
           <div class="hero-name">ASTRA</div>
           <div class="hero-role">Главный ИИ</div>
-          <div class="hero-state">● Готова помочь</div>
+          <div class="hero-state" id="astraState">● Готова помочь</div>
         </div>
       </article>
+
       <article class="hero mia">
-        <div class="hero-photo mia-face" aria-label="Mia">
-          <div class="face-art mia-art">
+        <div class="hero-photo mia-face">
+          <div class="face-art mia-art idle" id="miaFace">
             <div class="hair mia-hair"></div>
             <div class="face">
-              <div class="eyes"><span></span><span></span></div>
-              <div class="lips smile"></div>
+              <div class="brows"></div>
+              <div class="eyes"><span class="eye left"></span><span class="eye right"></span></div>
+              <div class="mouth smile"></div>
             </div>
             <div class="suit mia-suit"></div>
             <div class="neon-line pink"></div>
@@ -68,66 +77,66 @@
       </article>
     </section>
 
-    <div class="widgets">
-      <div class="widget ring">
-        <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5" class="ring-bg"/><circle cx="18" cy="18" r="15.5" class="ring-fg" stroke-dasharray="97 100"/></svg>
-        <span>100%</span>
-        <small>Готовность</small>
-      </div>
-      <div class="widget greet" id="greetBubble">
-        <strong>Привет! Я ASTRA ✦</strong>
-        <span>Чем займёмся сегодня?</span>
-      </div>
-      <div class="widget weather">
-        <div>☀ +12°C</div>
-        <small>Берлин</small>
+    <!-- GIFT BAR (TikTok style) -->
+    <div class="gift-bar" id="giftBar">
+      <div class="gift-title">Подарки / Реакции</div>
+      <div class="gifts">
+        <button class="gift-btn" data-gift="rose" data-label="Роза">🌹</button>
+        <button class="gift-btn" data-gift="heart" data-label="Сердце">💖</button>
+        <button class="gift-btn" data-gift="star" data-label="Звезда">⭐</button>
+        <button class="gift-btn" data-gift="diamond" data-label="Алмаз">💎</button>
+        <button class="gift-btn" data-gift="rocket" data-label="Ракета">🚀</button>
+        <button class="gift-btn" data-gift="crown" data-label="Корона">👑</button>
       </div>
     </div>
 
+    <!-- TOOLS -->
     <div class="tools" id="tools">
-      <button type="button" data-prompt="Давай поболтаем">💬<span>Чат ИИ</span></button>
-      <button type="button" data-prompt="Помоги написать код"></><span>Код и IT</span></button>
-      <button type="button" data-prompt="Придумай промпт для генерации изображения">🖼<span>Генерация</span></button>
-      <button type="button" data-prompt="Найди информацию по теме">🔍<span>Поиск</span></button>
+      <button type="button" data-prompt="Давай поболтаем">💬<span>Чат</span></button>
+      <button type="button" data-prompt="Помоги написать код"></><span>Код</span></button>
+      <button type="button" data-prompt="Придумай идею для TikTok видео">🎬<span>TikTok</span></button>
+      <button type="button" data-prompt="Придумай промпт для генерации изображения">🖼<span>Арт</span></button>
       <button type="button" data-prompt="Переведи текст">🌐<span>Перевод</span></button>
-      <button type="button" data-prompt="Какая погода?">⛅<span>Погода</span></button>
-      <button type="button" data-prompt="Поставь напоминание">⏰<span>Напоминания</span></button>
       <button type="button" data-prompt="Создай агента для задачи">🤖<span>Агенты</span></button>
-      <button type="button" class="more" id="moreTools">+<span>Ещё</span></button>
-      <button type="button" data-prompt="Помоги со сценарием видео">▶<span>Видео</span></button>
-      <button type="button" data-prompt="Давай поговорим голосом">🎤<span>Голос</span></button>
+      <button type="button" data-prompt="Помоги со сценарием стрима">📡<span>Стрим</span></button>
+      <button type="button" id="voiceModeBtn">🎤<span>Голос</span></button>
     </div>
 
+    <!-- CHAT -->
     <div class="chat" id="chat" aria-live="polite"></div>
 
+    <!-- COMPOSE -->
     <form class="compose" id="form">
       <button type="button" class="c-btn" id="micBtn" title="Голос">🎤</button>
-      <input type="text" id="prompt" placeholder="Написать сообщение или задать вопрос…" autocomplete="off">
+      <input type="text" id="prompt" placeholder="Напиши или нажми 🎤 и говори…" autocomplete="off">
       <button type="submit" class="c-btn send" id="sendBtn" title="Отправить">➤</button>
     </form>
 
+    <!-- BOTTOM NAV -->
     <nav class="bottom">
-      <button type="button" class="active">🏠<span>Главная</span></button>
+      <button type="button" class="active" data-tab="home">🏠<span>Главная</span></button>
+      <button type="button" id="navGifts">🎁<span>Подарки</span></button>
       <button type="button" id="navAgents">🤖<span>Агенты</span></button>
-      <button type="button">📊<span>Проекты</span></button>
-      <button type="button" id="navSettings">👑<span>Возможности</span></button>
+      <button type="button" id="navSettings">⚙<span>Настройки</span></button>
       <button type="button" id="navProfile">★<span>Профиль</span></button>
     </nav>
   </div>
 
+  <!-- SETTINGS MODAL -->
   <div class="modal" id="settingsModal" hidden>
     <div class="modal-card">
       <div class="modal-head">
-        <h2>Режим ИИ</h2>
+        <h2>Настройки ASTRA</h2>
         <button type="button" class="icon-btn" id="closeSettings">✕</button>
       </div>
-      <p class="hint"><b>Демо-режим</b> работает без ключей (локальные ответы). Для умного чата как ChatGPT — OpenRouter (бесплатный ключ).</p>
 
-      <label>Режим</label>
+      <p class="hint"><b>Демо-режим</b> работает без ключей. Для умного ИИ подключи OpenRouter.</p>
+
+      <label>Режим ИИ</label>
       <select id="provider">
         <option value="demo">Демо (без ключа)</option>
-        <option value="openrouter">OpenRouter (умный ИИ, ключ sk-or-v1-…)</option>
-        <option value="openai">OpenAI ChatGPT</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="openai">OpenAI</option>
         <option value="groq">Groq</option>
         <option value="custom">Свой endpoint</option>
       </select>
@@ -135,7 +144,7 @@
       <label>Модель</label>
       <select id="model"></select>
 
-      <label>API ключ (не нужен для Демо)</label>
+      <label>API ключ</label>
       <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
 
       <div id="customWrap" hidden>
@@ -146,13 +155,23 @@
       <label>Характер ASTRA</label>
       <textarea id="sysPrompt" rows="3"></textarea>
 
+      <label class="checkbox-row">
+        <input type="checkbox" id="voiceReply" checked>
+        <span>Отвечать голосом</span>
+      </label>
+
       <div class="modal-actions">
         <button type="button" class="btn primary" id="saveSettings">Сохранить</button>
         <button type="button" class="btn" id="testSettings">Проверить</button>
       </div>
       <p class="hint" id="settingsMsg"></p>
-      <p class="hint">Бесплатный умный ИИ: <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> → ключ → модель openrouter/free.</p>
+      <p class="hint">Бесплатный ИИ: <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a></p>
     </div>
+  </div>
+
+  <!-- Gift reaction overlay -->
+  <div class="gift-overlay" id="giftOverlay" hidden>
+    <div class="gift-pop" id="giftPop"></div>
   </div>
 
   <script src="script.js"></script>

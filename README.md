@@ -1,44 +1,40 @@
 # ASTRA + Mia — AI Assistant
 
-Футуристический интерфейс с двумя ассистентами (ASTRA и Mia), чатом и подключением реального ИИ.
+Футуристический ИИ-ассистент с мимикой, голосом и реакциями на подарки.
 
 ## Ссылка
 
-После включения GitHub Pages:
 **https://lexa25.github.io/ASTRA-AI-Assistant/**
 
-Settings → Pages → Deploy from branch `main` / folder `/ (root)`.
+(Settings → Pages → Deploy from branch `main`)
 
-## Голос (WebRTC)
+## Возможности
 
-- Кнопка 🎤 запрашивает микрофон через `getUserMedia` (WebRTC)
-- Распознавание речи — Web Speech API (лучше всего работает в Chrome / Edge)
-- Ответы Астры озвучиваются через SpeechSynthesis
-- Кнопка пульсирует красным, пока слушает
+### Мимика и жесты
+- Состояния: idle / thinking / speaking / happy / love / surprised
+- Рот двигается когда говорит
+- Глаза, брови и руки реагируют на эмоции
+- Индикатор «говорит»
 
-Просто нажми на микрофон и говори. После паузы текст уходит в чат, Астра отвечает голосом.
+### Голос (WebRTC)
+- Кнопка 🎤 → getUserMedia + SpeechRecognition
+- Ответы озвучиваются (SpeechSynthesis)
+- Работает лучше всего в Chrome / Edge
 
-## Как подключить ИИ
+### Подарки / TikTok-стиль
+- Панель подарков (роза, сердце, звезда, алмаз, ракета, корона)
+- При подарке: анимация + звук + смена мимики + голосовая реакция
+- Кнопка «🎵 TikTok» включает режим стримерши
 
-1. Открой приложение → кнопка **⚙**
-2. Провайдер: **OpenRouter** (лучше всего работает из браузера)
-3. Зарегистрируйся на [openrouter.ai](https://openrouter.ai) → создай API key (`sk-or-v1-...`)
-4. Вставь ключ → модель `openrouter/free` (бесплатно) или GPT/Claude через OpenRouter
-5. **Сохранить** → **Проверить ключ**
+> Настоящее подключение к TikTok Live (события подарков в реальном времени) требует бэкенда (Cloudflare Workers / твой astra-vpn) + источник событий TikTok.
 
-### ChatGPT (OpenAI)
-
-- Либо выбери провайдер **OpenAI** и ключ `sk-proj-...` (иногда CORS блокирует из браузера)
-- Либо через OpenRouter: модель `openai/gpt-4o-mini` / `openai/gpt-4o` — так надёжнее
-
-### Свой сервер
-
-Провайдер **Custom** → Base URL вида `https://.../v1/chat/completions` + ключ.
-
-Ключ хранится только в `localStorage` браузера.
+### ИИ
+- Демо-режим без ключей
+- OpenRouter / OpenAI / Groq / свой endpoint
+- Настраиваемый характер
 
 ## Файлы
 
 - `index.html` — разметка
-- `styles.css` — интерфейс + анимация микрофона
-- `script.js` — чат + API + голос (WebRTC / SpeechRecognition / TTS)
+- `styles.css` — дизайн + анимации мимики
+- `script.js` — логика, голос, подарки, ИИ
