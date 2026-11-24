@@ -13,7 +13,6 @@
   <div class="bg"></div>
   <div class="app">
 
-    <!-- HEADER -->
     <header class="top">
       <div class="brand">
         <div class="brand-icon">✦</div>
@@ -29,7 +28,6 @@
       </div>
     </header>
 
-    <!-- HEROES with expressions -->
     <section class="heroes">
       <article class="hero astra" id="astraHero">
         <div class="hero-photo astra-face">
@@ -77,44 +75,39 @@
       </article>
     </section>
 
-    <!-- GIFT BAR (TikTok style) -->
     <div class="gift-bar" id="giftBar">
       <div class="gift-title">Подарки / Реакции</div>
       <div class="gifts">
-        <button class="gift-btn" data-gift="rose" data-label="Роза">🌹</button>
-        <button class="gift-btn" data-gift="heart" data-label="Сердце">💖</button>
-        <button class="gift-btn" data-gift="star" data-label="Звезда">⭐</button>
-        <button class="gift-btn" data-gift="diamond" data-label="Алмаз">💎</button>
-        <button class="gift-btn" data-gift="rocket" data-label="Ракета">🚀</button>
-        <button class="gift-btn" data-gift="crown" data-label="Корона">👑</button>
+        <button class="gift-btn" data-gift="rose">🌹</button>
+        <button class="gift-btn" data-gift="heart">💖</button>
+        <button class="gift-btn" data-gift="star">⭐</button>
+        <button class="gift-btn" data-gift="diamond">💎</button>
+        <button class="gift-btn" data-gift="rocket">🚀</button>
+        <button class="gift-btn" data-gift="crown">👑</button>
       </div>
     </div>
 
-    <!-- TOOLS -->
     <div class="tools" id="tools">
       <button type="button" data-prompt="Давай поболтаем">💬<span>Чат</span></button>
-      <button type="button" data-prompt="Помоги написать код"></><span>Код</span></button>
+      <button type="button" data-prompt="Сделай план улучшения проекта ASTRA">🤖<span>Агенты</span></button>
       <button type="button" data-prompt="Придумай идею для TikTok видео">🎬<span>TikTok</span></button>
-      <button type="button" data-prompt="Придумай промпт для генерации изображения">🖼<span>Арт</span></button>
+      <button type="button" data-prompt="Напиши пример кода">💻<span>Код</span></button>
       <button type="button" data-prompt="Переведи текст">🌐<span>Перевод</span></button>
-      <button type="button" data-prompt="Создай агента для задачи">🤖<span>Агенты</span></button>
       <button type="button" data-prompt="Помоги со сценарием стрима">📡<span>Стрим</span></button>
       <button type="button" id="voiceModeBtn">🎤<span>Голос</span></button>
+      <button type="button" data-prompt="Проверь статус системы и агентов">📊<span>Статус</span></button>
     </div>
 
-    <!-- CHAT -->
     <div class="chat" id="chat" aria-live="polite"></div>
 
-    <!-- COMPOSE -->
     <form class="compose" id="form">
       <button type="button" class="c-btn" id="micBtn" title="Голос">🎤</button>
-      <input type="text" id="prompt" placeholder="Напиши или нажми 🎤 и говори…" autocomplete="off">
+      <input type="text" id="prompt" placeholder="Напиши задачу или просто поговори…" autocomplete="off">
       <button type="submit" class="c-btn send" id="sendBtn" title="Отправить">➤</button>
     </form>
 
-    <!-- BOTTOM NAV -->
     <nav class="bottom">
-      <button type="button" class="active" data-tab="home">🏠<span>Главная</span></button>
+      <button type="button" class="active">🏠<span>Главная</span></button>
       <button type="button" id="navGifts">🎁<span>Подарки</span></button>
       <button type="button" id="navAgents">🤖<span>Агенты</span></button>
       <button type="button" id="navSettings">⚙<span>Настройки</span></button>
@@ -122,7 +115,7 @@
     </nav>
   </div>
 
-  <!-- SETTINGS MODAL -->
+  <!-- SETTINGS -->
   <div class="modal" id="settingsModal" hidden>
     <div class="modal-card">
       <div class="modal-head">
@@ -130,30 +123,10 @@
         <button type="button" class="icon-btn" id="closeSettings">✕</button>
       </div>
 
-      <p class="hint"><b>Демо-режим</b> работает без ключей. Для умного ИИ подключи OpenRouter.</p>
+      <p class="hint">Укажи адрес своего Cloudflare Worker (astra-vpn).</p>
 
-      <label>Режим ИИ</label>
-      <select id="provider">
-        <option value="demo">Демо (без ключа)</option>
-        <option value="openrouter">OpenRouter</option>
-        <option value="openai">OpenAI</option>
-        <option value="groq">Groq</option>
-        <option value="custom">Свой endpoint</option>
-      </select>
-
-      <label>Модель</label>
-      <select id="model"></select>
-
-      <label>API ключ</label>
-      <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
-
-      <div id="customWrap" hidden>
-        <label>Base URL</label>
-        <input type="url" id="customUrl" placeholder="https://api.example.com/v1/chat/completions">
-      </div>
-
-      <label>Характер ASTRA</label>
-      <textarea id="sysPrompt" rows="3"></textarea>
+      <label>Worker URL</label>
+      <input type="url" id="workerUrl" placeholder="https://astra-vpn.xxx.workers.dev">
 
       <label class="checkbox-row">
         <input type="checkbox" id="voiceReply" checked>
@@ -165,11 +138,9 @@
         <button type="button" class="btn" id="testSettings">Проверить</button>
       </div>
       <p class="hint" id="settingsMsg"></p>
-      <p class="hint">Бесплатный ИИ: <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a></p>
     </div>
   </div>
 
-  <!-- Gift reaction overlay -->
   <div class="gift-overlay" id="giftOverlay" hidden>
     <div class="gift-pop" id="giftPop"></div>
   </div>
