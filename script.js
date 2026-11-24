@@ -3,9 +3,7 @@
 const STORAGE_KEY = 'astra_settings_v5';
 
 // ========== CONFIG ==========
-// Поставь сюда адрес своего Worker (без слэша в конце)
-// Пример: https://astra-vpn.твой-сабдомен.workers.dev
-const DEFAULT_WORKER_URL = 'https://astra-vpn.lexa25.workers.dev';
+const DEFAULT_WORKER_URL = 'https://d9a31f77-astra-vpn.lexawavrov89.workers.dev';
 
 const GIFT_REACTIONS = {
   rose:    { emoji: '🌹', text: 'Ого, роза! Спасибо, это так мило 💕', expr: 'love' },
@@ -271,7 +269,6 @@ async function callWorkerChat(userText) {
     throw new Error(err);
   }
 
-  // Поддерживаем разные форматы ответа Worker
   const answer = data.answer || data.reply || data.content || data?.choices?.[0]?.message?.content || data?.message;
   if (!answer || typeof answer !== 'string') {
     throw new Error('Пустой или неизвестный формат ответа от Worker');
@@ -288,7 +285,7 @@ async function runAgentTask(taskText) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       goal: taskText,
-      mode: 'on_demand'   // сразу выполнять
+      mode: 'on_demand'
     })
   });
 
@@ -308,7 +305,6 @@ async function sendMessage(text) {
   addMsg('user', q);
   history.push({ role: 'user', content: q });
 
-  // Если сообщение похоже на задачу для агентов
   const isAgentTask = /сделай|напиши код|реализуй|исправь|добавь|создай агента|запусти агентов|выполни задачу/i.test(q);
 
   setExpression('thinking');
@@ -320,7 +316,6 @@ async function sendMessage(text) {
     let answer;
 
     if (isAgentTask) {
-      // Пробуем запустить workflow агентов
       try {
         const result = await runAgentTask(q);
         const id = result.id || result.workflowId || result.instanceId;
@@ -328,7 +323,6 @@ async function sendMessage(text) {
           (id ? `Задача принята агентами. ID: ${id}\nОни выполняют её сейчас. Можешь спросить статус позже.` :
            'Агенты приняли задачу и начали выполнение.');
       } catch (agentErr) {
-        // Если workflow не сработал — обычный чат
         console.warn('Agent workflow failed, falling back to chat', agentErr);
         answer = await callWorkerChat(q);
       }
@@ -444,4 +438,4 @@ voiceMode = settings.voiceReply !== false;
 setStatus('на связи', true);
 setExpression('idle');
 
-addMsg('bot', 'Привет! Я ASTRA ✦\n\nСейчас подключена к Worker.\n• Просто пиши — отвечаю\n• Напиши задачу («сделай…», «напиши код…») — запущу агентов\n• 🎤 — голос\n• Подарки работают\n\nЕсли Worker URL другой — открой ⚙ и укажи его.');
+addMsg('bot', 'Привет! Я ASTRA ✦\n\nСейчас подключена к Worker.\n• Просто пиши — отвечаю\n• Напиши задачу («сделай…», «напиши код…») — запущу агентов\n• 🎤 — голос\n• Подарки работают');
