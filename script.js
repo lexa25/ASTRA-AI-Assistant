@@ -44,12 +44,17 @@ const DEFAULT_PROMPT = `Ты ASTRA — футуристический женск
 
 let settings = loadSettings();
 let history = [];
+let isListening = false;
+let recognition = null;
+let mediaStream = null;
+let voiceMode = true; // auto-speak replies
 
 const $ = (s) => document.querySelector(s);
 const chat = $('#chat');
 const form = $('#form');
 const input = $('#prompt');
 const sendBtn = $('#sendBtn');
+const micBtn = $('#micBtn');
 const statusText = $('#statusText');
 const statusPill = $('#statusPill');
 
@@ -107,6 +112,7 @@ function demoReply(q) {
   if (/мия|mia/.test(t)) return 'Mia — контент-компаньон: сценарии, посты, идеи роликов. Скажи тему — накидаю план.';
   if (/погод/.test(t)) return 'В виджете сейчас заглушка +12°C Берлин. Для живой погоды нужен API (Open-Meteo можно добавить без ключа).';
   if (/ключ|api|chatgpt|gpt|openrouter/.test(t)) return '⚙ → режим OpenRouter → ключ с openrouter.ai (sk-or-v1-…) → модель openrouter/free или openai/gpt-4o-mini. Демо работает и без ключа.';
+  if (/голос|микрофон|слушать|говори/.test(t)) return 'Голос уже работает! Нажми на микрофон — я слушаю. Когда закончишь говорить, я отвечу голосом.';
   return 'Приняла: «' + q.slice(0, 120) + '».\n\nСейчас демо-режим (без ключа). Отвечаю шаблоном. Для нормального ИИ: ⚙ → OpenRouter → бесплатный ключ. Твой полный бэкенд с агентами: Workers astra-vpn.';
 }
 
@@ -152,6 +158,142 @@ async function callAI(userText) {
   return answer.trim();
 }
 
+// ========== VOICE (WebRTC + SpeechRecognition + TTS) ==========
+
+function speak(text) {
+  if (!voiceMode || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ru-RU';
+  utter.rate = 1.05;
+  utter.pitch = 1.1;
+  // Try to pick a female Russian voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const ruFemale = voices.find(v => v.lang.startsWith('ru') && /female|woman|anna|irina|milena|oksana/i.test(v.name))
+                || voices.find(v => v.lang.startsWith('ru'));
+  if (ruFemale) utter.voice = ruFemale;
+  window.speechSynthesis.speak(utter);
+}
+
+function updateMicUI(listening) {
+  if (!micBtn) return;
+  if (listening) {
+    micBtn.classList.add('listening');
+    micBtn.title = 'Слушаю... Нажми чтобы остановить';
+    micBtn.textContent = '🔴';
+    setStatus('слушаю…', true);
+  } else {
+    micBtn.classList.remove('listening');
+    micBtn.title = 'Голос';
+    micBtn.textContent = '🎤';
+  }
+}
+
+async function startVoice() {
+  if (isListening) return;
+
+  // 1. Request microphone via WebRTC getUserMedia
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch (err) {
+    addMsg('bot', 'Нет доступа к микрофону. Разреши доступ в настройках браузера.', 'error');
+    setStatus('нет микрофона', false);
+    return;
+  }
+
+  // 2. SpeechRecognition (uses the WebRTC stream under the hood in most browsers)
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    addMsg('bot', 'Распознавание речи не поддерживается в этом браузере. Лучше всего работает в Chrome / Edge.', 'error');
+    stopVoice();
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ru-RU';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
+
+  let finalTranscript = '';
+
+  recognition.onstart = () => {
+    isListening = true;
+    updateMicUI(true);
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interim += transcript;
+      }
+    }
+    // Show live text in input
+    input.value = (finalTranscript + interim).trim();
+  };
+
+  recognition.onerror = (event) => {
+    console.warn('SpeechRecognition error:', event.error);
+    if (event.error === 'not-allowed') {
+      addMsg('bot', 'Доступ к микрофону запрещён.', 'error');
+    } else if (event.error === 'no-speech') {
+      // just stop quietly
+    } else {
+      addMsg('bot', 'Ошибка распознавания: ' + event.error, 'error');
+    }
+    stopVoice();
+  };
+
+  recognition.onend = () => {
+    const text = (finalTranscript || input.value || '').trim();
+    stopVoice();
+    if (text) {
+      sendMessage(text);
+    }
+  };
+
+  try {
+    recognition.start();
+  } catch (e) {
+    console.error(e);
+    stopVoice();
+  }
+}
+
+function stopVoice() {
+  isListening = false;
+  updateMicUI(false);
+
+  if (recognition) {
+    try { recognition.stop(); } catch {}
+    recognition = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+
+  if (statusText.textContent === 'слушаю…') {
+    setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
+  }
+}
+
+function toggleVoice() {
+  if (isListening) {
+    stopVoice();
+  } else {
+    // Stop any ongoing speech so we can listen
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    startVoice();
+  }
+}
+
+// ========== END VOICE ==========
+
 async function sendMessage(text) {
   const q = (text || input.value || '').trim();
   if (!q) return;
@@ -167,6 +309,8 @@ async function sendMessage(text) {
     addMsg('bot', answer);
     history.push({ role: 'assistant', content: answer });
     setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
+    // Speak the reply
+    speak(answer);
   } catch (e) {
     thinking.remove();
     addMsg('bot', String(e.message || e), 'error');
@@ -191,6 +335,11 @@ $('#closeSettings').addEventListener('click', closeSettings);
 $('#settingsModal').addEventListener('click', (e) => {
   if (e.target.id === 'settingsModal') closeSettings();
 });
+
+if (micBtn) {
+  micBtn.addEventListener('click', toggleVoice);
+}
+
 function openSettings() {
   $('#provider').value = settings.provider;
   $('#apiKey').value = settings.apiKey || '';
@@ -235,6 +384,12 @@ $('#testSettings').addEventListener('click', async () => {
   }
 });
 
+// Preload voices
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
 fillModels();
 setStatus(settings.provider === 'demo' ? 'демо' : 'на связи', true);
-addMsg('bot', 'Привет! Я ASTRA, рядом Mia.\n\nСейчас можно писать сразу — демо без ключа.\nДля умного ИИ (ChatGPT-уровень): ⚙ → OpenRouter.\nАгенты 24/7 — на твоём Workers (astra-vpn), не на статическом GitHub Pages.');
+addMsg('bot', 'Привет! Я ASTRA, рядом Mia.\n\n🎤 Голос включён: нажми на микрофон и говори.\nЯ слушаю через WebRTC и отвечаю голосом.\n\nДля умного ИИ: ⚙ → OpenRouter.\nАгенты 24/7 — на твоём Workers (astra-vpn).');

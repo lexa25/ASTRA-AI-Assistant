@@ -9,6 +9,15 @@
 
 Settings → Pages → Deploy from branch `main` / folder `/ (root)`.
 
+## Голос (WebRTC)
+
+- Кнопка 🎤 запрашивает микрофон через `getUserMedia` (WebRTC)
+- Распознавание речи — Web Speech API (лучше всего работает в Chrome / Edge)
+- Ответы Астры озвучиваются через SpeechSynthesis
+- Кнопка пульсирует красным, пока слушает
+
+Просто нажми на микрофон и говори. После паузы текст уходит в чат, Астра отвечает голосом.
+
 ## Как подключить ИИ
 
 1. Открой приложение → кнопка **⚙**
@@ -31,5 +40,5 @@ Settings → Pages → Deploy from branch `main` / folder `/ (root)`.
 ## Файлы
 
 - `index.html` — разметка
-- `styles.css` — интерфейс
-- `script.js` — чат + API
+- `styles.css` — интерфейс + анимация микрофона
+- `script.js` — чат + API + голос (WebRTC / SpeechRecognition / TTS)
